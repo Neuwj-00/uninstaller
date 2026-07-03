@@ -1,6 +1,6 @@
 # Maintainer: Neuwj <Neuwj@linuxmail.org>
 pkgname=uninstaller
-pkgver=1.0.0
+pkgver=0.1.0
 pkgrel=1
 pkgdesc="A minimal and modern terminal package uninstaller written in Rust"
 arch=('x86_64')
@@ -12,10 +12,9 @@ source=()
 sha256sums=()
 
 build() {
-
-  cargo build --release --locked --target-dir target
+  cargo build --release --locked --target-dir "$srcdir/target"
 }
 
 package() {
-  install -Dm755 "target/release/${pkgname}" "${pkgdir}/usr/bin/${pkgname}"
+  install -Dm755 "$srcdir/target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
 }

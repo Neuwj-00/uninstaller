@@ -10,7 +10,7 @@ pub mod app;
 pub mod ui;
 
 use app::App;
-use managers::{pacman::Pacman, flatpak::Flatpak};
+use managers::flatpak::Flatpak;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers},
     execute,
@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut app = App::new(Box::new(Pacman));
+    let mut app = App::new(crate::managers::detect_system_manager());
 
     let res = run_app(&mut terminal, &mut app);
 
@@ -67,11 +67,6 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 app.search_query.clear();
                             }
                         },
-                        KeyCode::Char('p') | KeyCode::Char('P') => {
-                            app.manager = Box::new(Pacman);
-                            app.refresh_packages();
-                            app.selected_for_removal.clear();
-                        }
                         KeyCode::Char('f') | KeyCode::Char('F') => {
                             app.manager = Box::new(Flatpak);
                             app.refresh_packages();
@@ -145,6 +140,16 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 } else {
                                     app.logs.push("ERROR: Failed to start process!".to_string());
                                     app.input_mode = app::InputMode::Done;
+                                }
+                            }
+                        }
+                        KeyCode::Char(c) => {
+                            let sys_mgr = crate::managers::detect_system_manager();
+                            if let Some(sys_char) = sys_mgr.name().chars().next() {
+                                if c.to_ascii_lowercase() == sys_char.to_ascii_lowercase() {
+                                    app.manager = sys_mgr;
+                                    app.refresh_packages();
+                                    app.selected_for_removal.clear();
                                 }
                             }
                         }

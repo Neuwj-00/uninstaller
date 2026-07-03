@@ -38,24 +38,48 @@ pub fn ui(f: &mut Frame, app: &mut App) {
     }
 
     
+    let sys_mgr = crate::managers::detect_system_manager();
+    let sys_name = sys_mgr.name();
+    let sys_key = sys_name.chars().next().unwrap_or(' ').to_ascii_uppercase();
+    
+    let header_text = format!(
+        " Mode: {} | {} [{}] | Flatpak [F] | Search [S] | Select [Space] | Uninstall [Enter] | Quit [Q] ",
+        app.manager.name(), sys_name, sys_key
+    );
+
+    let (footer_title, footer_text) = match app.input_mode {
+        InputMode::Normal => {
+            let text = if !app.search_query.is_empty() { format!(" Filter active: '{}' (Press 'C' to clear) ", app.search_query) } 
+            else { format!(" {} packages found. ", app.packages.iter().filter(|p| p.name.to_lowercase().contains(&app.search_query.to_lowercase())).count()) };
+            (" Status ", text)
+        }
+        InputMode::Search => {
+            (" Search (Press Enter/Esc to stop) ", format!(" {}_", app.search_query))
+        }
+        _ => (" Status ", " ... ".to_string())
+    };
+
+    let available_width = f.size().width.saturating_sub(4);
+    let header_lines = if available_width == 0 { 1 } else { (header_text.len() as u16 + available_width - 1) / available_width };
+    let header_height = std::cmp::max(3, header_lines + 2);
+
+    let footer_lines = if available_width == 0 { 1 } else { (footer_text.len() as u16 + available_width - 1) / available_width };
+    let footer_height = std::cmp::max(3, footer_lines + 2);
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
-            Constraint::Length(3),
+            Constraint::Length(header_height),
             Constraint::Min(5),
-            Constraint::Length(3),
+            Constraint::Length(footer_height),
         ])
         .split(f.size());
 
-    
-    let header_text = format!(
-        " Mode: {} | Pacman [P] | Flatpak [F] | Search [S] | Select [Space] | Uninstall [Enter] | Quit [Q] ",
-        app.manager.name()
-    );
     let header = Paragraph::new(header_text)
         .style(Style::default().fg(Color::White))
-        .block(Block::default().borders(Borders::ALL).title(" UNINSTALLER "));
+        .block(Block::default().borders(Borders::ALL).title(" UNINSTALLER "))
+        .wrap(Wrap { trim: true });
     f.render_widget(header, chunks[0]);
 
     let search_query = app.search_query.to_lowercase();
@@ -97,17 +121,7 @@ pub fn ui(f: &mut Frame, app: &mut App) {
 
     f.render_stateful_widget(list, chunks[1], &mut app.state);
 
-    let (footer_title, footer_text) = match app.input_mode {
-        InputMode::Normal => {
-            let text = if !app.search_query.is_empty() { format!(" Filter active: '{}' (Press 'C' to clear) ", app.search_query) } 
-            else { format!(" {} packages found. ", filtered_packages.len()) };
-            (" Status ", text)
-        }
-        InputMode::Search => {
-            (" Search (Press Enter/Esc to stop) ", format!(" {}_", app.search_query))
-        }
-        _ => (" Status ", " ... ".to_string())
-    };
+    // Footer text is already determined above
 
     let footer_block = Block::default()
         .borders(Borders::ALL)
@@ -119,6 +133,9 @@ pub fn ui(f: &mut Frame, app: &mut App) {
         )
         .style(Style::default().fg(Color::White));
 
-    let footer = Paragraph::new(footer_text).style(Style::default().fg(Color::White)).block(footer_block);
+    let footer = Paragraph::new(footer_text)
+        .style(Style::default().fg(Color::White))
+        .block(footer_block)
+        .wrap(Wrap { trim: true });
     f.render_widget(footer, chunks[2]);
 }
