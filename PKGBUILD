@@ -8,13 +8,16 @@ url="https://github.com/Neuwj-00/uninstaller"
 license=('GPL3')
 depends=('gcc-libs')
 makedepends=('cargo')
-source=()
-sha256sums=()
+source=("$pkgname-$pkgver.tar.gz::https://github.com/Neuwj-00/uninstaller/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP') # Sürüm yayınladığınızda 'updpkgsums' ile güncelleyin
 
 build() {
-  cargo build --release --locked --target-dir "$srcdir/target"
+  cd "$pkgname-$pkgver"
+  cargo build --release --locked --target-dir target
 }
 
 package() {
-  install -Dm755 "$srcdir/target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
+  cd "$pkgname-$pkgver"
+  install -Dm755 "target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }
