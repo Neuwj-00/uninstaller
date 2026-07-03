@@ -1,4 +1,4 @@
-
+# Maintainer: Neuwj <Neuwj@linuxmail.org>
 pkgname=uninstaller
 pkgver=1.0.0
 pkgrel=1
@@ -8,20 +8,14 @@ url="https://github.com/Neuwj-00/uninstaller"
 license=('GPL3')
 depends=('gcc-libs')
 makedepends=('cargo')
-
-
-source=("Cargo.toml"
-        "Cargo.lock"
-        "src/") 
-sha256sums=('SKIP' 'SKIP' 'SKIP')
+source=()
+sha256sums=()
 
 build() {
- 
-  cd "$srcdir"
-  cargo build --release --locked
+
+  cargo build --release --locked --target-dir target
 }
 
 package() {
-  cd "$srcdir"
   install -Dm755 "target/release/${pkgname}" "${pkgdir}/usr/bin/${pkgname}"
 }
